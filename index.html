@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="web-css.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23060c10'/><text x='50' y='68' font-family='Arial Black,sans-serif' font-size='52' font-weight='900' fill='%2300d4ff' text-anchor='middle'>OB</text></svg>">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -22,8 +24,8 @@
       <a href="#services" class="nav-item">Services</a>
       <a href="#contact" class="nav-item">Contact</a>
     </div>
-    <div class="nav-actions">
-      <a href="web-html-signin.html" class="btn-ghost">Sign Up</a>
+    <div class="nav-actions" id="navActions">
+      <a href="web-html-signup.html" class="btn-ghost">Sign Up</a>
       <a href="web-html-signin.html" class="btn-solid">Log In</a>
     </div>
     <button class="nav-toggle" id="navToggle" aria-label="Menu">
@@ -293,6 +295,32 @@
   <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
 
   <script>
+    const firebaseConfig = {
+    apiKey: "AIzaSyCPC9SYd2M-OXTejoOKCfunOnaifixwbgg",
+    authDomain: "oussama-portfolio-c391e.firebaseapp.com",
+    projectId: "oussama-portfolio-c391e",
+    storageBucket: "oussama-portfolio-c391e.firebasestorage.app",
+    messagingSenderId: "516744473155",
+    appId: "1:516744473155:web:45df424fe07fcd918bc2f6"
+  };
+  firebase.initializeApp(firebaseConfig);
+
+  firebase.auth().onAuthStateChanged(user => {
+    const nav = document.getElementById('navActions');
+    if (user) {
+      const name = user.displayName || user.email.split('@')[0];
+      nav.innerHTML = `
+        <span style="font-size:14px;font-weight:500;color:var(--text-2)">Hey, ${name} 👋</span>
+        <button class="btn-solid" onclick="firebase.auth().signOut()">Log Out</button>
+      `;
+    } else {
+      nav.innerHTML = `
+        <a href="web-html-signup.html" class="btn-ghost">Sign Up</a>
+        <a href="web-html-signin.html" class="btn-solid">Log In</a>
+      `;
+    }
+  });
+
     const glow = document.getElementById('cursorGlow');
     document.addEventListener('mousemove', e => {
       glow.style.left = e.clientX + 'px';
@@ -349,11 +377,5 @@
     }
 type();
   </script>
-
-  <!-- Vercel Web Analytics -->
-  <script>
-    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-  </script>
-  <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
