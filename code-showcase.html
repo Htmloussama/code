@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Dev — Code Breakdown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #060c10;
+      --bg-2:     #0a1520;
+      --bg-card:  #0d1e2c;
+      --bg-code:  #050b10;
+      --border:   rgba(0,210,255,0.1);
+      --border-2: rgba(0,210,255,0.22);
+      --cyan:     #00d4ff;
+      --gold:     #f0c060;
+      --green:    #00e5a0;
+      --purple:   #b388ff;
+      --coral:    #ff7b7b;
+      --text:     #e8f4f8;
+      --text-2:   #7a9db0;
+      --text-3:   #3a5a6e;
+      --mono:     'JetBrains Mono', monospace;
+      --sans:     'Space Grotesk', sans-serif;
+      --disp:     'Syne', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── CURSOR GLOW ── */
+    .cursor-glow {
+      position: fixed;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(0,212,255,0.05) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%,-50%);
+      z-index: 0;
+      transition: left 0.08s, top 0.08s;
+    }
+
+    /* ── NAV ── */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 64px;
+      background: rgba(6,12,16,0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand { font-family: var(--disp); font-size: 20px; font-weight: 800; }
+    .nav-brand .dot { color: var(--cyan); }
+    .back-link {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px; font-weight: 500; color: var(--text-2);
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .back-link:hover { color: var(--cyan); border-color: var(--border-2); text-decoration: none; }
+    .nav-tag {
+      font-size: 12px; font-weight: 600; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--cyan);
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 50px; padding: 5px 14px;
+    }
+
+    /* ── HERO HEADER ── */
+    .page-hero {
+      position: relative;
+      padding: 80px 60px 60px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .page-hero::before {
+      content: '';
+      position: absolute;
+      top: -100px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 300px;
+      background: radial-gradient(ellipse, rgba(0,212,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .page-hero-tag {
+      display: inline-block;
+      padding: 5px 14px; font-size: 12px; font-weight: 600;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--cyan); background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2); border-radius: 50px;
+      margin-bottom: 20px;
+    }
+    .page-hero h1 {
+      font-family: var(--disp);
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      font-weight: 800; letter-spacing: -2px;
+      margin-bottom: 16px;
+    }
+    .page-hero h1 span { color: var(--cyan); }
+    .page-hero p {
+      font-size: 17px; color: var(--text-2);
+      max-width: 560px; margin: 0 auto 36px;
+    }
+    .file-tabs {
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+    }
+    .file-tab {
+      padding: 10px 22px; font-size: 14px; font-weight: 600;
+      font-family: var(--mono);
+      color: var(--text-2); background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: 8px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .file-tab:hover, .file-tab.active {
+      color: var(--cyan); border-color: var(--border-2);
+      background: rgba(0,212,255,0.07);
+    }
+    .file-tab.active { box-shadow: 0 0 16px rgba(0,212,255,0.15); }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 40px 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ── CODE SECTION ── */
+    .code-section {
+      display: none;
+      flex-direction: column;
+      gap: 40px;
+    }
+    .code-section.active { display: flex; }
+
+    /* ── CODE BLOCK ── */
+    .code-block {
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--bg-code);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .code-block.visible { opacity: 1; transform: none; }
+
+    .code-block-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-block-dots { display: flex; gap: 7px; }
+    .code-block-dots span {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .code-block-dots span:nth-child(1) { background: #ff5f57; }
+    .code-block-dots span:nth-child(2) { background: #febc2e; }
+    .code-block-dots span:nth-child(3) { background: #28c840; }
+    .code-block-filename {
+      font-family: var(--mono); font-size: 13px;
+      color: var(--text-2); font-weight: 500;
+    }
+    .copy-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; font-size: 12px; font-weight: 600;
+      font-family: var(--sans);
+      color: var(--text-3); background: transparent;
+      border: 1px solid var(--border); border-radius: 6px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .copy-btn:hover { color: var(--cyan); border-color: var(--border-2); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+    pre {
+      padding: 28px 24px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13.5px;
+      line-height: 1.8;
+      color: #a8c8e0;
+      tab-size: 2;
+    }
+    pre::-webkit-scrollbar { height: 4px; }
+    pre::-webkit-scrollbar-track { background: transparent; }
+    pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+
+    /* Syntax colors */
+    .t-tag     { color: #79c0ff; }   /* HTML tags */
+    .t-attr    { color: #d2a8ff; }   /* attributes */
+    .t-str     { color: #a5d6ff; }   /* strings */
+    .t-prop    { color: #79c0ff; }   /* CSS property */
+    .t-val     { color: #a5d6ff; }   /* CSS value */
+    .t-sel     { color: var(--gold); }/* CSS selector */
+    .t-com     { color: #3a5a6e; font-style: italic; } /* comments */
+    .t-num     { color: #f0c060; }   /* numbers */
+    .t-kw      { color: var(--coral); } /* keywords */
+    .t-fn      { color: var(--green); } /* functions */
+
+    /* ── EXPLANATION CARD ── */
+    .explain-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .explain-card.visible { opacity: 1; transform: none; }
+    .explain-num {
+      flex-shrink: 0;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-size: 13px; font-weight: 500;
+      color: var(--cyan); background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2); border-radius: 8px;
+    }
+    .explain-body { flex: 1; }
+    .explain-title {
+      font-size: 15px; font-weight: 700;
+      color: var(--text); margin-bottom: 6px;
+    }
+    .explain-text {
+      font-size: 14px; color: var(--text-2); line-height: 1.75;
+    }
+    .explain-text code {
+      font-family: var(--mono); font-size: 12px;
+      color: var(--cyan); background: rgba(0,212,255,0.08);
+      padding: 2px 7px; border-radius: 4px;
+    }
+
+    /* ── DIVIDER ── */
+    .section-divider {
+      display: flex; align-items: center; gap: 16px;
+      margin: 8px 0;
+      color: var(--text-3); font-size: 12px; font-weight: 600;
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+    .section-divider::before, .section-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── PROGRESS BAR ── */
+    .progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: var(--cyan);
+      width: 0%;
+      z-index: 999;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 10px rgba(0,212,255,0.6);
+    }
+    #scrollTopBtn {
+      position: fixed; bottom: 28px; right: 28px;
+      width: 44px; height: 44px; font-size: 18px; font-weight: 700;
+      color: var(--bg); background: var(--cyan);
+      border: none; border-radius: 50%; cursor: pointer; z-index: 200;
+      opacity: 0; transform: translateY(10px); pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+    }
+    #scrollTopBtn.visible { opacity: 1; transform: none; pointer-events: auto; }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 0 20px; }
+      .page-hero { padding: 60px 24px 40px; }
+      .main { padding: 0 20px 80px; }
+      pre { font-size: 12px; padding: 20px 16px; }
+      .explain-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="progress-bar" id="progressBar"></div>
+  <div class="cursor-glow" id="cursorGlow"></div>
+
+  <!-- NAV -->
+  <nav class="navbar">
+    <div class="nav-brand">OB<span class="dot">.</span></div>
+    <span class="nav-tag">Web Dev</span>
+    <a href="web-html (2).html" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back
+    </a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="page-hero">
+    <div class="page-hero-tag">Source Code</div>
+    <h1>The Code <span>Explained</span></h1>
+    <p>A complete breakdown of the HTML and CSS behind this portfolio — every part explained simply.</p>
+    <div class="file-tabs">
+      <button class="file-tab active" onclick="switchTab('html', this)">📄 web-html.html</button>
+      <button class="file-tab" onclick="switchTab('css', this)">🎨 web-css.css</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- ══ HTML SECTION ══ -->
+    <div class="code-section active" id="section-html">
+
+      <div class="section-divider">Document Structure</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-html.html — Head</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-com">&lt;!-- Every HTML file starts with this declaration --&gt;</span>
+<span class="t-tag">&lt;!DOCTYPE html&gt;</span>
+<span class="t-tag">&lt;html</span> <span class="t-attr">lang</span>=<span class="t-str">"en"</span><span class="t-tag">&gt;</span>
+<span class="t-tag">&lt;head&gt;</span>
+  <span class="t-com">&lt;!-- Character encoding — always UTF-8 --&gt;</span>
+  <span class="t-tag">&lt;meta</span> <span class="t-attr">charset</span>=<span class="t-str">"UTF-8"</span><span class="t-tag">&gt;</span>
+
+  <span class="t-com">&lt;!-- Makes the page responsive on phones --&gt;</span>
+  <span class="t-tag">&lt;meta</span> <span class="t-attr">name</span>=<span class="t-str">"viewport"</span> <span class="t-attr">content</span>=<span class="t-str">"width=device-width, initial-scale=1.0"</span><span class="t-tag">&gt;</span>
+
+  <span class="t-com">&lt;!-- Page title shown in browser tab --&gt;</span>
+  <span class="t-tag">&lt;title&gt;</span>Oussama Boussaidi — Portfolio<span class="t-tag">&lt;/title&gt;</span>
+
+  <span class="t-com">&lt;!-- Loading custom fonts from Google --&gt;</span>
+  <span class="t-tag">&lt;link</span> <span class="t-attr">rel</span>=<span class="t-str">"preconnect"</span> <span class="t-attr">href</span>=<span class="t-str">"https://fonts.googleapis.com"</span><span class="t-tag">&gt;</span>
+  <span class="t-tag">&lt;link</span> <span class="t-attr">href</span>=<span class="t-str">"https://fonts.googleapis.com/css2?family=Space+Grotesk&family=Syne:wght@700;800&display=swap"</span> <span class="t-attr">rel</span>=<span class="t-str">"stylesheet"</span><span class="t-tag">&gt;</span>
+
+  <span class="t-com">&lt;!-- Link to our CSS file --&gt;</span>
+  <span class="t-tag">&lt;link</span> <span class="t-attr">rel</span>=<span class="t-str">"stylesheet"</span> <span class="t-attr">href</span>=<span class="t-str">"web-css.css"</span><span class="t-tag">&gt;</span>
+<span class="t-tag">&lt;/head&gt;</span></pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">01</div>
+        <div class="explain-body">
+          <div class="explain-title">The &lt;head&gt; — invisible setup</div>
+          <div class="explain-text">
+            The <code>&lt;head&gt;</code> is never shown on screen — it's the page's settings panel.
+            <code>charset="UTF-8"</code> lets you use any language character (Arabic, French, German…).
+            The <code>viewport</code> meta tag is what makes your page look good on a phone instead of zoomed out.
+            <code>link rel="stylesheet"</code> tells the browser to load your CSS file and apply its styles.
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">Navigation Bar</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-html.html — Navbar</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-tag">&lt;nav</span> <span class="t-attr">class</span>=<span class="t-str">"navbar"</span><span class="t-tag">&gt;</span>
+
+  <span class="t-com">&lt;!-- Logo: "OB." --&gt;</span>
+  <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"nav-brand"</span><span class="t-tag">&gt;</span>OB<span class="t-tag">&lt;span</span> <span class="t-attr">class</span>=<span class="t-str">"dot"</span><span class="t-tag">&gt;</span>.<span class="t-tag">&lt;/span&gt;&lt;/div&gt;</span>
+
+  <span class="t-com">&lt;!-- Navigation links — href="#id" scrolls to that section --&gt;</span>
+  <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"nav-links"</span> <span class="t-attr">id</span>=<span class="t-str">"navLinks"</span><span class="t-tag">&gt;</span>
+    <span class="t-tag">&lt;a</span> <span class="t-attr">href</span>=<span class="t-str">"#hero"</span>     <span class="t-attr">class</span>=<span class="t-str">"nav-item"</span><span class="t-tag">&gt;</span>Home<span class="t-tag">&lt;/a&gt;</span>
+    <span class="t-tag">&lt;a</span> <span class="t-attr">href</span>=<span class="t-str">"#projects"</span>  <span class="t-attr">class</span>=<span class="t-str">"nav-item"</span><span class="t-tag">&gt;</span>Projects<span class="t-tag">&lt;/a&gt;</span>
+    <span class="t-tag">&lt;a</span> <span class="t-attr">href</span>=<span class="t-str">"#services"</span>  <span class="t-attr">class</span>=<span class="t-str">"nav-item"</span><span class="t-tag">&gt;</span>Services<span class="t-tag">&lt;/a&gt;</span>
+    <span class="t-tag">&lt;a</span> <span class="t-attr">href</span>=<span class="t-str">"#contact"</span>   <span class="t-attr">class</span>=<span class="t-str">"nav-item"</span><span class="t-tag">&gt;</span>Contact<span class="t-tag">&lt;/a&gt;</span>
+  <span class="t-tag">&lt;/div&gt;</span>
+
+  <span class="t-com">&lt;!-- Sign Up / Log In buttons --&gt;</span>
+  <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"nav-actions"</span><span class="t-tag">&gt;</span>
+    <span class="t-tag">&lt;a</span> <span class="t-attr">href</span>=<span class="t-str">"web-html-signin.html"</span> <span class="t-attr">class</span>=<span class="t-str">"btn-ghost"</span><span class="t-tag">&gt;</span>Sign Up<span class="t-tag">&lt;/a&gt;</span>
+    <span class="t-tag">&lt;a</span> <span class="t-attr">href</span>=<span class="t-str">"web-html-signin.html"</span> <span class="t-attr">class</span>=<span class="t-str">"btn-solid"</span><span class="t-tag">&gt;</span>Log In<span class="t-tag">&lt;/a&gt;</span>
+  <span class="t-tag">&lt;/div&gt;</span>
+
+  <span class="t-com">&lt;!-- Hamburger button — only shows on mobile --&gt;</span>
+  <span class="t-tag">&lt;button</span> <span class="t-attr">class</span>=<span class="t-str">"nav-toggle"</span> <span class="t-attr">id</span>=<span class="t-str">"navToggle"</span><span class="t-tag">&gt;</span>
+    <span class="t-tag">&lt;span&gt;&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;span&gt;&lt;/span&gt;</span>
+  <span class="t-tag">&lt;/button&gt;</span>
+
+<span class="t-tag">&lt;/nav&gt;</span></pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">02</div>
+        <div class="explain-body">
+          <div class="explain-title">The &lt;nav&gt; — sticky top bar</div>
+          <div class="explain-text">
+            <code>&lt;nav&gt;</code> is a semantic HTML tag — it tells the browser "this is navigation".
+            The links use <code>href="#hero"</code> — the <code>#</code> means "jump to the element with <code>id="hero"</code>" on the same page.
+            The three empty <code>&lt;span&gt;</code> inside the button are the three lines of the hamburger menu icon, drawn purely with CSS.
+            Two button styles: <code>btn-ghost</code> (outlined) and <code>btn-solid</code> (filled cyan).
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">Hero Section</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-html.html — Hero</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-tag">&lt;section</span> <span class="t-attr">class</span>=<span class="t-str">"hero"</span> <span class="t-attr">id</span>=<span class="t-str">"hero"</span><span class="t-tag">&gt;</span>
+
+  <span class="t-com">&lt;!-- Background decorations (orbs) — pure CSS animated blobs --&gt;</span>
+  <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"hero-bg"</span><span class="t-tag">&gt;</span>
+    <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"orb orb-1"</span><span class="t-tag">&gt;&lt;/div&gt;</span>
+    <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"orb orb-2"</span><span class="t-tag">&gt;&lt;/div&gt;</span>
+  <span class="t-tag">&lt;/div&gt;</span>
+
+  <span class="t-com">&lt;!-- "revealed" class is added immediately so it's visible on load --&gt;</span>
+  <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"hero-content revealed"</span><span class="t-tag">&gt;</span>
+
+    <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"hero-text"</span><span class="t-tag">&gt;</span>
+      <span class="t-com">&lt;!-- Green "available" badge --&gt;</span>
+      <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"badge"</span><span class="t-tag">&gt;</span>
+        <span class="t-tag">&lt;span</span> <span class="t-attr">class</span>=<span class="t-str">"badge-dot"</span><span class="t-tag">&gt;&lt;/span&gt;</span>
+        Available for work
+      <span class="t-tag">&lt;/div&gt;</span>
+
+      <span class="t-com">&lt;!-- Main name — &lt;br&gt; forces a line break --&gt;</span>
+      <span class="t-tag">&lt;h1</span> <span class="t-attr">class</span>=<span class="t-str">"hero-name"</span><span class="t-tag">&gt;</span>
+        Oussama<span class="t-tag">&lt;br&gt;&lt;span</span> <span class="t-attr">class</span>=<span class="t-str">"accent"</span><span class="t-tag">&gt;</span>Boussaidi<span class="t-tag">&lt;/span&gt;</span>
+      <span class="t-tag">&lt;/h1&gt;</span>
+
+      <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"hero-role"</span><span class="t-tag">&gt;</span>
+        <span class="t-tag">&lt;span</span> <span class="t-attr">class</span>=<span class="t-str">"role-line"</span><span class="t-tag">&gt;&lt;/span&gt;</span> <span class="t-com">&lt;!-- cyan decorative line --&gt;</span>
+        Frontend Developer
+      <span class="t-tag">&lt;/div&gt;</span>
+    <span class="t-tag">&lt;/div&gt;</span>
+
+    <span class="t-com">&lt;!-- Avatar with spinning ring decorations --&gt;</span>
+    <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"hero-avatar-wrap"</span><span class="t-tag">&gt;</span>
+      <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"avatar-ring"</span><span class="t-tag">&gt;&lt;/div&gt;</span>        <span class="t-com">&lt;!-- outer ring --&gt;</span>
+      <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"avatar-ring avatar-ring-2"</span><span class="t-tag">&gt;&lt;/div&gt;</span> <span class="t-com">&lt;!-- inner ring --&gt;</span>
+      <span class="t-tag">&lt;img</span> <span class="t-attr">src</span>=<span class="t-str">"avatar.avif"</span> <span class="t-attr">alt</span>=<span class="t-str">"Oussama"</span> <span class="t-attr">class</span>=<span class="t-str">"hero-avatar"</span><span class="t-tag">&gt;</span>
+      <span class="t-tag">&lt;div</span> <span class="t-attr">class</span>=<span class="t-str">"avatar-tag"</span><span class="t-tag">&gt;</span>Frontend Dev<span class="t-tag">&lt;/div&gt;</span>
+    <span class="t-tag">&lt;/div&gt;</span>
+
+  <span class="t-tag">&lt;/div&gt;</span>
+<span class="t-tag">&lt;/section&gt;</span></pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">03</div>
+        <div class="explain-body">
+          <div class="explain-title">The Hero — first thing visitors see</div>
+          <div class="explain-text">
+            <code>id="hero"</code> lets the nav link <code>href="#hero"</code> scroll directly here.
+            The two <code>.orb</code> divs are empty — they're just colored circles animated with CSS <code>filter: blur()</code> to create the glowing background effect.
+            The <code>.revealed</code> class is added directly in HTML so the content appears immediately without waiting for JavaScript.
+            The spinning rings around the avatar are empty <code>&lt;div&gt;</code>s — their circle shape and rotation come entirely from CSS <code>border-radius: 50%</code> and <code>@keyframes spin</code>.
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">JavaScript</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-html.html — Script</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-tag">&lt;script&gt;</span>
+  <span class="t-com">// 1. Cursor glow — follows mouse position</span>
+  <span class="t-kw">const</span> glow = document.<span class="t-fn">getElementById</span>(<span class="t-str">'cursorGlow'</span>);
+  document.<span class="t-fn">addEventListener</span>(<span class="t-str">'mousemove'</span>, e => {
+    glow.style.left = e.clientX + <span class="t-str">'px'</span>;
+    glow.style.top  = e.clientY + <span class="t-str">'px'</span>;
+  });
+
+  <span class="t-com">// 2. Scroll-to-top button — shows after scrolling 400px</span>
+  <span class="t-kw">const</span> scrollBtn = document.<span class="t-fn">getElementById</span>(<span class="t-str">'scrollTopBtn'</span>);
+  window.<span class="t-fn">addEventListener</span>(<span class="t-str">'scroll'</span>, () => {
+    scrollBtn.classList.<span class="t-fn">toggle</span>(<span class="t-str">'visible'</span>, window.scrollY > <span class="t-num">400</span>);
+  });
+
+  <span class="t-com">// 3. Mobile menu toggle — adds/removes "open" class</span>
+  <span class="t-kw">const</span> toggle   = document.<span class="t-fn">getElementById</span>(<span class="t-str">'navToggle'</span>);
+  <span class="t-kw">const</span> navLinks = document.<span class="t-fn">getElementById</span>(<span class="t-str">'navLinks'</span>);
+  toggle.<span class="t-fn">addEventListener</span>(<span class="t-str">'click'</span>, () => {
+    navLinks.classList.<span class="t-fn">toggle</span>(<span class="t-str">'open'</span>);
+  });
+
+  <span class="t-com">// 4. Scroll reveal — watches cards and animates them in</span>
+  <span class="t-kw">const</span> io = <span class="t-kw">new</span> <span class="t-fn">IntersectionObserver</span>(entries => {
+    entries.<span class="t-fn">forEach</span>(e => {
+      <span class="t-kw">if</span> (e.isIntersecting) e.target.classList.<span class="t-fn">add</span>(<span class="t-str">'revealed'</span>);
+    });
+  }, { threshold: <span class="t-num">0.1</span> });
+
+  document.<span class="t-fn">querySelectorAll</span>(<span class="t-str">'.scard, .flip-wrap'</span>)
+    .<span class="t-fn">forEach</span>(el => io.<span class="t-fn">observe</span>(el));
+<span class="t-tag">&lt;/script&gt;</span></pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">04</div>
+        <div class="explain-body">
+          <div class="explain-title">JavaScript — 4 small interactions</div>
+          <div class="explain-text">
+            <strong style="color:var(--text)">Cursor glow:</strong> Every time the mouse moves, we update the position of a div using <code>style.left</code> and <code>style.top</code>. The glow effect is just CSS blur on that div.<br><br>
+            <strong style="color:var(--text)">Scroll button:</strong> <code>classList.toggle('visible', condition)</code> — adds the class if condition is true, removes it if false. One line instead of an if/else.<br><br>
+            <strong style="color:var(--text)">Scroll reveal:</strong> <code>IntersectionObserver</code> watches elements and fires when they enter the viewport. We just add <code>'revealed'</code> which triggers the CSS fade-in animation.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end html section -->
+
+    <!-- ══ CSS SECTION ══ -->
+    <div class="code-section" id="section-css">
+
+      <div class="section-divider">CSS Variables</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-css.css — Variables & Reset</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-com">/* Define the whole color palette once here */</span>
+<span class="t-sel">:root</span> {
+  <span class="t-prop">--bg</span>:       <span class="t-val">#060c10</span>;     <span class="t-com">/* darkest background */</span>
+  <span class="t-prop">--bg-card</span>:  <span class="t-val">#0d1e2c</span>;     <span class="t-com">/* card surfaces */</span>
+  <span class="t-prop">--border</span>:   <span class="t-val">rgba(0,210,255,0.1)</span>;  <span class="t-com">/* subtle cyan borders */</span>
+  <span class="t-prop">--cyan</span>:     <span class="t-val">#00d4ff</span>;     <span class="t-com">/* main accent color */</span>
+  <span class="t-prop">--gold</span>:     <span class="t-val">#f0c060</span>;     <span class="t-com">/* German section accent */</span>
+  <span class="t-prop">--green</span>:    <span class="t-val">#00e5a0</span>;     <span class="t-com">/* "available" badge */</span>
+  <span class="t-prop">--text</span>:     <span class="t-val">#e8f4f8</span>;     <span class="t-com">/* primary text */</span>
+  <span class="t-prop">--text-2</span>:   <span class="t-val">#7a9db0</span>;     <span class="t-com">/* secondary/muted text */</span>
+}
+
+<span class="t-com">/* Reset — removes default browser spacing */</span>
+<span class="t-sel">*, *::before, *::after</span> {
+  <span class="t-prop">box-sizing</span>: <span class="t-val">border-box</span>;
+  <span class="t-prop">margin</span>: <span class="t-val">0</span>;
+  <span class="t-prop">padding</span>: <span class="t-val">0</span>;
+}
+
+<span class="t-sel">body</span> {
+  <span class="t-prop">background-color</span>: <span class="t-val">var(--bg)</span>;
+  <span class="t-prop">color</span>: <span class="t-val">var(--text)</span>;
+  <span class="t-prop">font-family</span>: <span class="t-val">var(--font-main)</span>;
+  <span class="t-prop">overflow-x</span>: <span class="t-val">hidden</span>; <span class="t-com">/* prevent horizontal scroll */</span>
+}</pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">01</div>
+        <div class="explain-body">
+          <div class="explain-title">CSS Variables — the color system</div>
+          <div class="explain-text">
+            <code>:root</code> is the top of the document — variables defined here are available everywhere.
+            <code>var(--cyan)</code> is how you use them. The huge advantage: if you want to change the accent color, you change it in ONE place and it updates everywhere automatically.
+            The <code>*</code> reset removes default browser margins — without this, every browser renders spacing differently and your layout breaks.
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">Navbar CSS</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-css.css — Navbar</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-sel">.navbar</span> {
+  <span class="t-prop">position</span>: <span class="t-val">sticky</span>;   <span class="t-com">/* sticks to top when scrolling */</span>
+  <span class="t-prop">top</span>: <span class="t-val">0</span>;
+  <span class="t-prop">z-index</span>: <span class="t-val">100</span>;       <span class="t-com">/* stays on top of everything */</span>
+  <span class="t-prop">display</span>: <span class="t-val">flex</span>;      <span class="t-com">/* items in a row */</span>
+  <span class="t-prop">align-items</span>: <span class="t-val">center</span>; <span class="t-com">/* vertically centered */</span>
+  <span class="t-prop">justify-content</span>: <span class="t-val">space-between</span>; <span class="t-com">/* logo left, links center, buttons right */</span>
+  <span class="t-prop">height</span>: <span class="t-val">68px</span>;
+  <span class="t-prop">background</span>: <span class="t-val">rgba(6,12,16,0.85)</span>;
+  <span class="t-prop">backdrop-filter</span>: <span class="t-val">blur(20px)</span>; <span class="t-com">/* frosted glass effect */</span>
+  <span class="t-prop">border-bottom</span>: <span class="t-val">1px solid var(--border)</span>;
+}
+
+<span class="t-sel">.btn-solid</span> {
+  <span class="t-prop">background</span>: <span class="t-val">var(--cyan)</span>;
+  <span class="t-prop">color</span>: <span class="t-val">var(--bg)</span>;     <span class="t-com">/* dark text on cyan — contrast */</span>
+  <span class="t-prop">border-radius</span>: <span class="t-val">8px</span>;
+  <span class="t-prop">padding</span>: <span class="t-val">8px 18px</span>;
+  <span class="t-prop">transition</span>: <span class="t-val">opacity 0.2s, transform 0.15s</span>;
+}
+<span class="t-sel">.btn-solid:hover</span> {
+  <span class="t-prop">opacity</span>: <span class="t-val">0.88</span>;
+  <span class="t-prop">transform</span>: <span class="t-val">translateY(-1px)</span>; <span class="t-com">/* subtle lift on hover */</span>
+}</pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">02</div>
+        <div class="explain-body">
+          <div class="explain-title">Flexbox + sticky + glass blur</div>
+          <div class="explain-text">
+            <code>position: sticky; top: 0</code> makes the navbar scroll with the page until it hits the top, then it "sticks" there — unlike <code>fixed</code> which always floats.<br><br>
+            <code>backdrop-filter: blur(20px)</code> creates the frosted glass look — it blurs whatever is behind the element. The background needs to be semi-transparent (<code>rgba(..., 0.85)</code>) for this to work.<br><br>
+            <code>transition</code> on the button means any property change (opacity, position) animates smoothly instead of jumping instantly.
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">Animations</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-css.css — Keyframe Animations</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-com">/* Avatar floating up and down */</span>
+<span class="t-sel">@keyframes</span> <span class="t-fn">float</span> {
+  <span class="t-num">0%</span>, <span class="t-num">100%</span> { <span class="t-prop">transform</span>: <span class="t-val">translateY(0)</span>; }
+  <span class="t-num">50%</span>        { <span class="t-prop">transform</span>: <span class="t-val">translateY(-18px)</span>; }
+}
+<span class="t-sel">.hero-avatar</span> {
+  <span class="t-prop">animation</span>: <span class="t-val">float 4s ease-in-out infinite</span>;
+}
+
+<span class="t-com">/* Rings spinning around the avatar */</span>
+<span class="t-sel">@keyframes</span> <span class="t-fn">spin</span> {
+  <span class="t-kw">to</span> { <span class="t-prop">transform</span>: <span class="t-val">rotate(360deg)</span>; }
+}
+<span class="t-sel">.avatar-ring</span>   { <span class="t-prop">animation</span>: <span class="t-val">spin 20s linear infinite</span>; }
+<span class="t-sel">.avatar-ring-2</span> { <span class="t-prop">animation</span>: <span class="t-val">spin 30s linear infinite reverse</span>; }
+
+<span class="t-com">/* Scroll reveal — cards fade in from below */</span>
+<span class="t-sel">.scard</span> {
+  <span class="t-prop">opacity</span>: <span class="t-val">0</span>;
+  <span class="t-prop">transform</span>: <span class="t-val">translateY(28px)</span>;
+  <span class="t-prop">transition</span>: <span class="t-val">opacity 0.5s, transform 0.5s</span>;
+}
+<span class="t-sel">.scard.revealed</span> {
+  <span class="t-prop">opacity</span>: <span class="t-val">1</span>;
+  <span class="t-prop">transform</span>: <span class="t-val">none</span>; <span class="t-com">/* back to original position */</span>
+}
+
+<span class="t-com">/* Green pulsing dot on the "available" badge */</span>
+<span class="t-sel">@keyframes</span> <span class="t-fn">pulse</span> {
+  <span class="t-num">0%</span>, <span class="t-num">100%</span> { <span class="t-prop">box-shadow</span>: <span class="t-val">0 0 0 0 rgba(0,229,160,0.5)</span>; }
+  <span class="t-num">50%</span>        { <span class="t-prop">box-shadow</span>: <span class="t-val">0 0 0 6px rgba(0,229,160,0)</span>; }
+}</pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">03</div>
+        <div class="explain-body">
+          <div class="explain-title">@keyframes — how CSS animations work</div>
+          <div class="explain-text">
+            <code>@keyframes</code> defines what an animation does. You name it, then describe the states at <code>0%</code> (start) and <code>100%</code> (end), with optional steps in between.<br><br>
+            <code>animation: float 4s ease-in-out infinite</code> — name, duration, timing curve, repeat count. <code>ease-in-out</code> makes it start slow, go fast in the middle, end slow — which is why the avatar looks like it's floating naturally instead of moving robotically.<br><br>
+            The scroll reveal trick: cards start <code>opacity: 0</code> and shifted down. JavaScript adds <code>.revealed</code> → CSS transitions them to <code>opacity: 1</code> and position 0. The <code>transition</code> property makes that change animate smoothly.
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">Responsive Design</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-css.css — Media Queries</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-com">/* Default styles are for desktop */</span>
+<span class="t-sel">.hero-content</span> {
+  <span class="t-prop">display</span>: <span class="t-val">flex</span>;
+  <span class="t-prop">flex-direction</span>: <span class="t-val">row</span>; <span class="t-com">/* text left, avatar right */</span>
+  <span class="t-prop">gap</span>: <span class="t-val">60px</span>;
+}
+
+<span class="t-com">/* When screen width ≤ 768px (tablet/phone): switch to column */</span>
+<span class="t-sel">@media (max-width: 768px)</span> {
+  <span class="t-sel">.hero-content</span> {
+    <span class="t-prop">flex-direction</span>: <span class="t-val">column-reverse</span>; <span class="t-com">/* avatar above text on mobile */</span>
+    <span class="t-prop">text-align</span>: <span class="t-val">center</span>;
+  }
+  <span class="t-sel">.navbar</span> {
+    <span class="t-prop">padding</span>: <span class="t-val">0 20px</span>; <span class="t-com">/* less padding on small screens */</span>
+  }
+  <span class="t-sel">.nav-links</span> {
+    <span class="t-prop">display</span>: <span class="t-val">none</span>; <span class="t-com">/* hidden by default on mobile */</span>
+  }
+  <span class="t-sel">.nav-links.open</span> {
+    <span class="t-prop">display</span>: <span class="t-val">flex</span>; <span class="t-com">/* shown when hamburger is clicked */</span>
+    <span class="t-prop">flex-direction</span>: <span class="t-val">column</span>;
+  }
+  <span class="t-sel">.services-grid</span> {
+    <span class="t-prop">grid-template-columns</span>: <span class="t-val">1fr</span>; <span class="t-com">/* 1 column instead of 2 */</span>
+  }
+}</pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">04</div>
+        <div class="explain-body">
+          <div class="explain-title">Media queries — making it work on phones</div>
+          <div class="explain-text">
+            <code>@media (max-width: 768px)</code> means "apply these styles ONLY when the screen is 768px wide or narrower". Everything inside overrides the default desktop styles.<br><br>
+            The mobile menu works by: hiding <code>.nav-links</code> with <code>display: none</code> by default, then JavaScript adds the <code>.open</code> class when the hamburger is clicked, and the CSS <code>.nav-links.open</code> rule shows it again with <code>display: flex</code>.
+            No extra libraries needed — pure HTML + CSS + 3 lines of JS.
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">Hero & Avatar CSS</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-css.css — Hero Section</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-sel">.hero</span> {
+  <span class="t-prop">position</span>: <span class="t-val">relative</span>;
+  <span class="t-prop">min-height</span>: <span class="t-val">calc(100vh - 68px)</span>; <span class="t-com">/* full screen minus navbar */</span>
+  <span class="t-prop">display</span>: <span class="t-val">flex</span>;
+  <span class="t-prop">align-items</span>: <span class="t-val">center</span>;
+  <span class="t-prop">justify-content</span>: <span class="t-val">center</span>;
+  <span class="t-prop">padding</span>: <span class="t-val">80px 60px</span>;
+  <span class="t-prop">overflow</span>: <span class="t-val">hidden</span>; <span class="t-com">/* clips the background orbs */</span>
+}
+
+<span class="t-com">/* Background blobs — pure CSS colored circles with blur */</span>
+<span class="t-sel">.orb</span> {
+  <span class="t-prop">position</span>: <span class="t-val">absolute</span>;
+  <span class="t-prop">border-radius</span>: <span class="t-val">50%</span>;
+  <span class="t-prop">filter</span>: <span class="t-val">blur(80px)</span>;
+  <span class="t-prop">opacity</span>: <span class="t-val">0.35</span>;
+  <span class="t-prop">pointer-events</span>: <span class="t-val">none</span>; <span class="t-com">/* can't click on them */</span>
+}
+<span class="t-sel">.orb-1</span> {
+  <span class="t-prop">width</span>: <span class="t-val">600px</span>; <span class="t-prop">height</span>: <span class="t-val">600px</span>;
+  <span class="t-prop">background</span>: <span class="t-val">rgba(0,180,255,0.18)</span>;
+  <span class="t-prop">top</span>: <span class="t-val">-200px</span>; <span class="t-prop">right</span>: <span class="t-val">-100px</span>;
+  <span class="t-prop">animation</span>: <span class="t-val">orb-drift 12s ease-in-out infinite alternate</span>;
+}
+<span class="t-sel">@keyframes</span> <span class="t-fn">orb-drift</span> {
+  <span class="t-kw">from</span> { <span class="t-prop">transform</span>: <span class="t-val">translate(0,0) scale(1)</span>; }
+  <span class="t-kw">to</span>   { <span class="t-prop">transform</span>: <span class="t-val">translate(40px,30px) scale(1.08)</span>; }
+}
+
+<span class="t-com">/* Avatar circular with floating animation */</span>
+<span class="t-sel">.hero-avatar</span> {
+  <span class="t-prop">width</span>: <span class="t-val">280px</span>; <span class="t-prop">height</span>: <span class="t-val">280px</span>;
+  <span class="t-prop">border-radius</span>: <span class="t-val">50%</span>;           <span class="t-com">/* makes it a circle */</span>
+  <span class="t-prop">object-fit</span>: <span class="t-val">cover</span>;            <span class="t-com">/* fills circle without squishing */</span>
+  <span class="t-prop">border</span>: <span class="t-val">3px solid rgba(0,212,255,0.3)</span>;
+  <span class="t-prop">animation</span>: <span class="t-val">float 4s ease-in-out infinite</span>;
+}
+
+<span class="t-com">/* The ring decorations are empty divs sized with CSS */</span>
+<span class="t-sel">.avatar-ring</span> {
+  <span class="t-prop">position</span>: <span class="t-val">absolute</span>;
+  <span class="t-prop">inset</span>: <span class="t-val">-8px</span>;               <span class="t-com">/* 8px bigger than parent on all sides */</span>
+  <span class="t-prop">border-radius</span>: <span class="t-val">50%</span>;
+  <span class="t-prop">border</span>: <span class="t-val">1.5px solid rgba(0,212,255,0.25)</span>;
+  <span class="t-prop">animation</span>: <span class="t-val">spin 20s linear infinite</span>;
+}
+
+<span class="t-com">/* Cyan badge tag on the avatar */</span>
+<span class="t-sel">.avatar-tag</span> {
+  <span class="t-prop">position</span>: <span class="t-val">absolute</span>;
+  <span class="t-prop">bottom</span>: <span class="t-val">10px</span>; <span class="t-prop">right</span>: <span class="t-val">-10px</span>; <span class="t-com">/* overlaps outside the circle */</span>
+  <span class="t-prop">padding</span>: <span class="t-val">8px 16px</span>;
+  <span class="t-prop">background</span>: <span class="t-val">var(--cyan)</span>;
+  <span class="t-prop">color</span>: <span class="t-val">var(--bg)</span>;
+  <span class="t-prop">border-radius</span>: <span class="t-val">50px</span>;
+  <span class="t-prop">font-size</span>: <span class="t-val">13px</span>; <span class="t-prop">font-weight</span>: <span class="t-val">600</span>;
+  <span class="t-prop">box-shadow</span>: <span class="t-val">0 4px 20px rgba(0,212,255,0.4)</span>;
+}</pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">05</div>
+        <div class="explain-body">
+          <div class="explain-title">Hero layout — full screen with floating avatar</div>
+          <div class="explain-text">
+            <code>min-height: calc(100vh - 68px)</code> — <code>100vh</code> = 100% of the screen height. We subtract the navbar height (68px) so the hero fills exactly the visible area.<br><br>
+            <code>filter: blur(80px)</code> on the orbs creates the glow. Combined with <code>opacity: 0.35</code> it's subtle. <code>pointer-events: none</code> makes them unclickable — they're purely decorative.<br><br>
+            <code>object-fit: cover</code> on the avatar image works like "background-size: cover" — it scales the image to fill the circle without stretching it. Without this, rectangular images would be squished into the circle shape.
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">Flip Card CSS</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-css.css — Flip Card</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-com">/* The outer card — sets the 3D perspective depth */</span>
+<span class="t-sel">.flip-card</span> {
+  <span class="t-prop">width</span>: <span class="t-val">min(720px, 100%)</span>;  <span class="t-com">/* max 720px, never exceeds screen */</span>
+  <span class="t-prop">height</span>: <span class="t-val">380px</span>;
+  <span class="t-prop">perspective</span>: <span class="t-val">1200px</span>;    <span class="t-com">/* distance of viewer from the card */</span>
+}
+
+<span class="t-com">/* The inner — this is what actually rotates */</span>
+<span class="t-sel">.flip-inner</span> {
+  <span class="t-prop">position</span>: <span class="t-val">relative</span>;
+  <span class="t-prop">width</span>: <span class="t-val">100%</span>; <span class="t-prop">height</span>: <span class="t-val">100%</span>;
+  <span class="t-prop">transform-style</span>: <span class="t-val">preserve-3d</span>; <span class="t-com">/* children exist in 3D space */</span>
+  <span class="t-prop">transition</span>: <span class="t-val">transform 0.7s ease</span>;
+}
+
+<span class="t-com">/* Hover triggers the rotation */</span>
+<span class="t-sel">.flip-card:hover .flip-inner</span> {
+  <span class="t-prop">transform</span>: <span class="t-val">rotateY(180deg)</span>; <span class="t-com">/* spins 180° around Y axis */</span>
+}
+
+<span class="t-com">/* Both faces stack on top of each other */</span>
+<span class="t-sel">.flip-front, .flip-back</span> {
+  <span class="t-prop">position</span>: <span class="t-val">absolute</span>;
+  <span class="t-prop">inset</span>: <span class="t-val">0</span>;
+  <span class="t-prop">backface-visibility</span>: <span class="t-val">hidden</span>; <span class="t-com">/* hides the face when rotated away */</span>
+  <span class="t-prop">border-radius</span>: <span class="t-val">22px</span>;
+}
+
+<span class="t-com">/* Back face starts pre-rotated so it appears correct after flip */</span>
+<span class="t-sel">.flip-back</span> {
+  <span class="t-prop">transform</span>: <span class="t-val">rotateY(180deg)</span>;
+  <span class="t-prop">background</span>: <span class="t-val">var(--bg-card)</span>;
+  <span class="t-prop">display</span>: <span class="t-val">flex</span>;
+  <span class="t-prop">align-items</span>: <span class="t-val">center</span>;
+  <span class="t-prop">justify-content</span>: <span class="t-val">center</span>;
+}</pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">06</div>
+        <div class="explain-body">
+          <div class="explain-title">3D flip card — how it actually works</div>
+          <div class="explain-text">
+            The trick uses three CSS properties together:<br><br>
+            <code>perspective</code> on the parent creates the 3D depth. Higher value = flatter/more subtle. Lower value = more dramatic distortion.<br><br>
+            <code>transform-style: preserve-3d</code> on the inner container tells the browser its children live in 3D space, not flat on the page.<br><br>
+            <code>backface-visibility: hidden</code> on both faces hides them when they're pointing away from you — without this you'd see the back face mirrored through the front.<br><br>
+            The back face starts at <code>rotateY(180deg)</code> — pre-rotated so when the card flips another 180°, it arrives upright. The whole animation is just one <code>transition</code> on the <code>transform</code> property.
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider">Services Grid CSS</div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-filename">web-css.css — Service Cards</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="t-com">/* CSS Grid — 2 equal columns */</span>
+<span class="t-sel">.services-grid</span> {
+  <span class="t-prop">display</span>: <span class="t-val">grid</span>;
+  <span class="t-prop">grid-template-columns</span>: <span class="t-val">repeat(2, 1fr)</span>; <span class="t-com">/* 2 cols, each 1 fraction of space */</span>
+  <span class="t-prop">gap</span>: <span class="t-val">24px</span>;
+}
+
+<span class="t-com">/* German card spans BOTH columns */</span>
+<span class="t-sel">.scard--german-header</span> {
+  <span class="t-prop">grid-column</span>: <span class="t-val">1 / -1</span>; <span class="t-com">/* from column 1 to last column */</span>
+}
+
+<span class="t-com">/* Base card styling */</span>
+<span class="t-sel">.scard</span> {
+  <span class="t-prop">background</span>: <span class="t-val">var(--bg-card)</span>;
+  <span class="t-prop">border</span>: <span class="t-val">1px solid var(--border)</span>;
+  <span class="t-prop">border-radius</span>: <span class="t-val">22px</span>;
+  <span class="t-prop">padding</span>: <span class="t-val">36px</span>;
+  <span class="t-prop">opacity</span>: <span class="t-val">0</span>;                  <span class="t-com">/* starts invisible */</span>
+  <span class="t-prop">transform</span>: <span class="t-val">translateY(28px)</span>;  <span class="t-com">/* starts shifted down */</span>
+  <span class="t-prop">transition</span>: <span class="t-val">opacity 0.5s, transform 0.5s, border-color 0.3s</span>;
+}
+<span class="t-sel">.scard.revealed</span> {
+  <span class="t-prop">opacity</span>: <span class="t-val">1</span>;
+  <span class="t-prop">transform</span>: <span class="t-val">none</span>;
+}
+
+<span class="t-com">/* Cyan sweep line that grows from left on hover */</span>
+<span class="t-sel">.scard::before</span> {
+  <span class="t-prop">content</span>: <span class="t-val">''</span>;
+  <span class="t-prop">position</span>: <span class="t-val">absolute</span>;
+  <span class="t-prop">top</span>: <span class="t-val">0</span>; <span class="t-prop">left</span>: <span class="t-val">0</span>; <span class="t-prop">right</span>: <span class="t-val">0</span>;
+  <span class="t-prop">height</span>: <span class="t-val">2px</span>;
+  <span class="t-prop">background</span>: <span class="t-val">var(--cyan)</span>;
+  <span class="t-prop">transform</span>: <span class="t-val">scaleX(0)</span>;       <span class="t-com">/* invisible: scaled to 0 width */</span>
+  <span class="t-prop">transform-origin</span>: <span class="t-val">left</span>;
+  <span class="t-prop">transition</span>: <span class="t-val">transform 0.4s ease</span>;
+}
+<span class="t-sel">.scard:hover::before</span> {
+  <span class="t-prop">transform</span>: <span class="t-val">scaleX(1)</span>;       <span class="t-com">/* visible: grows to full width */</span>
+}
+<span class="t-sel">.scard:hover</span> {
+  <span class="t-prop">transform</span>: <span class="t-val">translateY(-4px)</span>; <span class="t-com">/* card lifts up on hover */</span>
+  <span class="t-prop">box-shadow</span>: <span class="t-val">0 20px 60px rgba(0,0,0,0.4)</span>;
+}</pre>
+      </div>
+
+      <div class="explain-card">
+        <div class="explain-num">07</div>
+        <div class="explain-body">
+          <div class="explain-title">CSS Grid + pseudo-elements + hover effects</div>
+          <div class="explain-text">
+            <code>grid-template-columns: repeat(2, 1fr)</code> — <code>repeat(2, ...)</code> means "do this 2 times", <code>1fr</code> means "1 fraction of available space". Both columns are equal width automatically.<br><br>
+            <code>grid-column: 1 / -1</code> on the German card — <code>-1</code> means "the last column line". So it stretches from the first line to the last line = full width.<br><br>
+            <code>::before</code> is a pseudo-element — a fake element inserted before the card's content using only CSS, no extra HTML needed. We use it for the cyan top-border that sweeps in on hover. <code>scaleX(0)</code> makes it 0 width, <code>scaleX(1)</code> makes it full width — the <code>transition</code> animates between them.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end css section -->
+
+  </div><!-- end main -->
+
+  <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+  <script>
+    // Cursor glow
+    const glow = document.getElementById('cursorGlow');
+    document.addEventListener('mousemove', e => {
+      glow.style.left = e.clientX + 'px';
+      glow.style.top  = e.clientY + 'px';
+    });
+
+    // Reading progress bar
+    const progressBar = document.getElementById('progressBar');
+    window.addEventListener('scroll', () => {
+      const total = document.documentElement.scrollHeight - window.innerHeight;
+      progressBar.style.width = (window.scrollY / total * 100) + '%';
+    });
+
+    // Scroll top button
+    const scrollBtn = document.getElementById('scrollTopBtn');
+    window.addEventListener('scroll', () => {
+      scrollBtn.classList.toggle('visible', window.scrollY > 300);
+    });
+
+    // Tab switching
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.code-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.file-tab').forEach(b => b.classList.remove('active'));
+      document.getElementById('section-' + tab).classList.add('active');
+      btn.classList.add('active');
+      // Re-trigger animations
+      document.querySelectorAll('#section-' + tab + ' .code-block, #section-' + tab + ' .explain-card')
+        .forEach(el => { el.classList.remove('visible'); setTimeout(() => el.classList.add('visible'), 50); });
+    }
+
+    // Copy button
+    function copyCode(btn) {
+      const pre = btn.closest('.code-block').querySelector('pre');
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+        }, 2000);
+      });
+    }
+
+    // Scroll reveal for code blocks
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.code-block, .explain-card').forEach(el => io.observe(el));
+  </script>
+</body>
+</html>
